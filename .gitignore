@@ -175,10 +175,11 @@ cython_debug/
 .vscode/
 
 # Personal CVs
-*_CV.yaml
-*_cv.py
-*_CV.tex
+*CV.yaml
+*cv.py
+*CV.tex
 rendercv_output/
+results/
 
 # Include reference files
 !/tests/testdata/**/*.pdf

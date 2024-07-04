@@ -23,7 +23,7 @@ import pathlib
 import re
 import warnings
 from datetime import date as Date
-from typing import Annotated, Any, Literal, Optional, Type, get_args
+from typing import Annotated, Any, Literal, Optional, Type, get_args, Union, Dict
 
 import annotated_types as at
 import pydantic
@@ -43,7 +43,7 @@ warnings.filterwarnings("ignore")
 locale_catalog = {}
 
 
-def get_date_object(date: str | int) -> Date:
+def get_date_object(date: Union[str, int]) -> Date:
     """Parse a date string in YYYY-MM-DD, YYYY-MM, or YYYY format and return a
     `datetime.date` object. This function is used throughout the validation process of
     the data models.
@@ -163,7 +163,7 @@ class BulletEntry(RenderCVBaseModel):
 
 
 class EntryWithDate(RenderCVBaseModel):
-    date: Optional[int | str] = pydantic.Field(
+    date: Optional[Union[int, str]] = pydantic.Field(
         default=None,
         title="Date",
         description=(
@@ -176,8 +176,8 @@ class EntryWithDate(RenderCVBaseModel):
     @pydantic.field_validator("date", mode="before")
     @classmethod
     def check_date(
-        cls, date: Optional[int | RenderCVDate | str]
-    ) -> Optional[int | RenderCVDate | str]:
+        cls, date: Optional[Union[int, RenderCVDate, str]]
+    ) -> Optional[Union[int, RenderCVDate, str]]:
         """Check if `date` is provided correctly."""
         date_is_provided = date is not None
 
@@ -294,7 +294,7 @@ class EntryBase(EntryWithDate):
         description="The location of the event.",
         examples=["Istanbul, Türkiye"],
     )
-    start_date: Optional[int | RenderCVDate] = pydantic.Field(
+    start_date: Optional[Union[int, RenderCVDate]] = pydantic.Field(
         default=None,
         title="Start Date",
         description=(
@@ -302,7 +302,7 @@ class EntryBase(EntryWithDate):
         ),
         examples=["2020-09-24"],
     )
-    end_date: Optional[Literal["present"] | int | RenderCVDate] = pydantic.Field(
+    end_date: Optional[Union[Literal["present"], int, RenderCVDate]] = pydantic.Field(
         default=None,
         title="End Date",
         description=(
@@ -323,8 +323,8 @@ class EntryBase(EntryWithDate):
     @classmethod
     def check_and_parse_dates(
         cls,
-        date: Optional[Literal["present"] | int | RenderCVDate],
-    ) -> Optional[Literal["present"] | int | RenderCVDate]:
+        date: Optional[Union[Literal["present"], int, RenderCVDate]],
+    ) -> Optional[Union[Literal["present"], int, RenderCVDate]]:
         date_is_provided = date is not None
 
         if date_is_provided:
@@ -615,23 +615,36 @@ class EducationEntry(EntryBase, EducationEntryBase):
 
 
 # Create custom types named Entry and ListOfEntries:
+# Entry = (
+#     OneLineEntry
+#     | NormalEntry
+#     | ExperienceEntry
+#     | EducationEntry
+#     | PublicationEntry
+#     | BulletEntry
+#     | str
+# )
 Entry = (
+    Union[
     OneLineEntry
-    | NormalEntry
-    | ExperienceEntry
-    | EducationEntry
-    | PublicationEntry
-    | BulletEntry
-    | str
+    , NormalEntry
+    , ExperienceEntry
+    , EducationEntry
+    , PublicationEntry
+    , BulletEntry
+    , str
+    ]
 )
 ListOfEntries = list[
+    Union[
     OneLineEntry
-    | NormalEntry
-    | ExperienceEntry
-    | EducationEntry
-    | PublicationEntry
-    | BulletEntry
-    | str
+    , NormalEntry
+    , ExperienceEntry
+    , EducationEntry
+    , PublicationEntry
+    , BulletEntry
+    , str
+    ]
 ]
 entry_types = Entry.__args__[:-1]  # a tuple of all the entry types except str
 entry_type_names = [entry_type.__name__ for entry_type in entry_types] + ["TextEntry"]
@@ -691,7 +704,7 @@ def create_a_section_model(entry_type: Type[Entry]) -> Type[SectionBase]:
 
 
 def get_entry_and_section_type(
-    entry: dict[str, Any] | Entry,
+    entry: Union[dict[str, Any], Entry],
 ) -> tuple[
     str,
     Type[SectionBase],
@@ -738,8 +751,8 @@ def get_entry_and_section_type(
 
 
 def validate_section_input(
-    sections_input: SectionBase | list[Any],
-) -> SectionBase | list[Any]:
+    sections_input: Union[SectionBase, list[Any]],
+) -> Union[SectionBase, list[Any]]:
     """Validate a `SectionInput` object and raise an error if it is not valid.
 
     Sections input is very complex. It is either a `Section` object or a list of
@@ -1166,11 +1179,19 @@ LocaleCatalog()  # Initialize the locale catalog with the default values
 # It is a union of all the design options and the correct design option is determined by
 # the theme field, thanks to Pydantic's discriminator feature.
 # See https://docs.pydantic.dev/2.5/concepts/fields/#discriminator for more information
+# RenderCVDesign = Annotated[
+#     ClassicThemeOptions
+#     | ModerncvThemeOptions
+#     | Sb2novThemeOptions
+#     | EngineeringresumesThemeOptions,
+#     pydantic.Field(discriminator="theme"),
+# ]
 RenderCVDesign = Annotated[
-    ClassicThemeOptions
-    | ModerncvThemeOptions
-    | Sb2novThemeOptions
-    | EngineeringresumesThemeOptions,
+    Union
+    [ClassicThemeOptions
+    , ModerncvThemeOptions
+    , Sb2novThemeOptions
+    , EngineeringresumesThemeOptions],
     pydantic.Field(discriminator="theme"),
 ]
 rendercv_design_validator = pydantic.TypeAdapter(RenderCVDesign)
@@ -1184,7 +1205,7 @@ class RenderCVDataModel(RenderCVBaseModel):
         title="Curriculum Vitae",
         description="The data of the CV.",
     )
-    design: pydantic.json_schema.SkipJsonSchema[Any] | RenderCVDesign = pydantic.Field(
+    design: Union[pydantic.json_schema.SkipJsonSchema[Any], RenderCVDesign] = pydantic.Field(
         default=ClassicThemeOptions(theme="classic"),
         title="Design",
         description=(
@@ -1203,16 +1224,19 @@ class RenderCVDataModel(RenderCVBaseModel):
     @pydantic.field_validator("design", mode="before")
     @classmethod
     def initialize_if_custom_theme_is_used(
-        cls, design: RenderCVDesign | Any
-    ) -> RenderCVDesign | Any:
+        cls, design: Union[RenderCVDesign, Any]
+    ) -> Union[RenderCVDesign, Any]:
         """Initialize the custom theme if it is used and validate it. Otherwise, return
         the built-in theme."""
         # `get_args` for an Annotated object returns the arguments when Annotated is
         # used. The first argument is actually the union of the types, so we need to
         # access the first argument to use isinstance function.
         theme_data_model_types = get_args(RenderCVDesign)[0]
+        
+        # Convert the arguments to a tuple
+        theme_data_model_types_tuple = tuple(theme_data_model_types.__args__) if hasattr(theme_data_model_types, '__args__') else (theme_data_model_types,)
 
-        if isinstance(design, theme_data_model_types):
+        if isinstance(design, theme_data_model_types_tuple):
             # Then it means RenderCVDataModel is already initialized with a design, so
             # return it as is:
             return design
@@ -1346,10 +1370,10 @@ def dictionary_key_to_proper_section_title(key: str) -> str:
 
 
 def set_or_update_a_value(
-    data_model: pydantic.BaseModel | dict | list,
+    data_model: Union[pydantic.BaseModel, dict, list],
     key: str,
     value: str,
-    sub_model: pydantic.BaseModel | dict | list = None,
+    sub_model: Union[pydantic.BaseModel, dict, list] = None,
 ):
     """Set or update a value in a data model for a specific key. For example, a key can
     be `cv.sections.education.3.institution` and the value can be "Bogazici University".
@@ -1419,7 +1443,7 @@ def set_or_update_a_value(
 
 
 def read_input_file(
-    file_path_or_contents: pathlib.Path | str,
+    file_path_or_contents: Union[pathlib.Path, str],
 ) -> RenderCVDataModel:
     """Read the input file and return two instances of
     [RenderCVDataModel][rendercv.data_models.RenderCVDataModel]. The first instance is
@@ -1460,7 +1484,7 @@ def read_input_file(
     else:
         file_content = file_path_or_contents
 
-    input_as_dictionary: dict[str, Any] = ruamel.yaml.YAML().load(file_content)  # type: ignore
+    input_as_dictionary: Dict[str, Any] = ruamel.yaml.YAML().load(file_content)  # type: ignore
 
     # Validate the parsed dictionary by creating an instance of RenderCVDataModel:
     rendercv_data_model = RenderCVDataModel(**input_as_dictionary)

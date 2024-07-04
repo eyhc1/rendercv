@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Union
 
 import pydantic
 
@@ -23,16 +23,16 @@ class ModerncvThemeOptions(pydantic.BaseModel):
         description='The page size of the CV. The default value is "letterpaper".',
         examples=["a4paper", "letterpaper"],
     )
-    color: (
-        Literal["blue"]
-        | Literal["black"]
-        | Literal["burgundy"]
-        | Literal["green"]
-        | Literal["grey"]
-        | Literal["orange"]
-        | Literal["purple"]
-        | Literal["red"]
-    ) = pydantic.Field(
+    color: Union[
+        Literal["blue"],
+        Literal["black"],
+        Literal["burgundy"],
+        Literal["green"],
+        Literal["grey"],
+        Literal["orange"],
+        Literal["purple"],
+        Literal["red"],
+    ]= pydantic.Field(
         default="blue",
         validate_default=True,
         title="Primary Color",
