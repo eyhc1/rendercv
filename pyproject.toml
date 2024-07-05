@@ -66,7 +66,7 @@ description = 'A LaTeX CV/resume framework'
 authors = [{ name = 'Sina Atalay', email = 'dev@atalay.biz' }]
 license = "MIT"
 readme = "README.md"
-requires-python = '>=3.10'
+# requires-python = '>=3.10'
 # RenderCV depends on these packages. They will be installed automatically when RenderCV
 # is installed:
 dependencies = [

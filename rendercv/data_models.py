@@ -34,9 +34,8 @@ from .themes.classic import ClassicThemeOptions
 from .themes.engineeringresumes import EngineeringresumesThemeOptions
 from .themes.moderncv import ModerncvThemeOptions
 from .themes.sb2nov import Sb2novThemeOptions
+from .themes import ThemeOptions
 
-# Disable Pydantic warnings:
-warnings.filterwarnings("ignore")
 
 
 # The dictionary below will be overwritten by LocaleCatalog class.
@@ -115,7 +114,7 @@ class RenderCVBaseModel(pydantic.BaseModel):
     unknown key is provided in the input file.
     """
 
-    model_config = pydantic.ConfigDict(extra="forbid")
+    model_config = pydantic.ConfigDict(extra="allow")
 
 
 # ======================================================================================
@@ -792,6 +791,7 @@ def validate_section_input(
             "entries": sections_input,
         }
 
+        # Parse the section:
         try:
             section_type.model_validate(
                 test_section,
@@ -1236,6 +1236,15 @@ class RenderCVDataModel(RenderCVBaseModel):
         # Convert the arguments to a tuple
         theme_data_model_types_tuple = tuple(theme_data_model_types.__args__) if hasattr(theme_data_model_types, '__args__') else (theme_data_model_types,)
 
+        # Due to how the original code is written, we need to check the custom theme is not in any other folder than the working directory.
+        parent_folder = pathlib.Path(design["theme"]).parent
+        if parent_folder.name:
+            raise ValueError(
+                f"The custom theme folder should be in the working directory as the input file. Please move the custom theme folder from {parent_folder.absolute()} to the working directory {pathlib.Path.cwd()}.",
+                "theme",
+                design["theme"],
+            )
+
         if isinstance(design, theme_data_model_types_tuple):
             # Then it means RenderCVDataModel is already initialized with a design, so
             # return it as is:
@@ -1323,7 +1332,11 @@ class RenderCVDataModel(RenderCVBaseModel):
             else:
                 # Then it means there is no __init__.py file in the custom theme folder.
                 # Create a dummy data model and use that instead.
-                class ThemeOptionsAreNotProvided(RenderCVBaseModel):
+                warnings.warn(
+                    f"The custom theme {theme_name} doesn't have an __init__.py file."
+                    " RenderCV will use a dummy data model for the theme options."
+                )
+                class ThemeOptionsAreNotProvided(ThemeOptions):
                     theme: str = theme_name
 
                 theme_data_model = ThemeOptionsAreNotProvided(theme=theme_name)

@@ -1029,26 +1029,29 @@ def latex_to_pdf(
     ) as latex_process:
         output = latex_process.communicate()  # wait for the process to finish
         if latex_process.returncode != 0:
-            raise RuntimeError(
-                "Unfortunately, RenderCV's built-in TinyTeX binaries couldn't render"
-                " this LaTeX file into a PDF. This could be caused by one of two"
-                " reasons:\n\n1- The theme templates might have been updated in a way"
-                " RenderCV's TinyTeX cannot render. RenderCV's TinyTeX is minified to"
-                " keep the package size small. As a result, it doesn't function like a"
-                " general-purpose LaTeX distribution.\n2- Special characters, like"
-                " Greek or Chinese letters, that are not compatible with the fonts used"
-                " or RenderCV's TinyTeX might have been used.\n\nHowever, this issue"
-                " can be resolved quickly. RenderCV allows you to run your own LaTeX"
-                " distribution instead of the built-in TinyTeX. This can be done with"
-                " the '--use-local-latex-command' option, as shown below:\n\nrendercv"
-                " render --use-local-latex-command lualatex John_Doe_CV.yaml\n\nIf you"
-                " ensure that the generated LaTeX file can be compiled by your local"
-                " LaTeX distribution, RenderCV will work successfully. You can debug"
-                " the generated LaTeX file in your LaTeX editor to resolve any bugs."
-                " Then, you can start using RenderCV with your local LaTeX"
-                " distribution.\n\nIf you can't solve the problem, please open an issue"
-                " on GitHub."
-            )
+            # instead of raising the error with the small essay they had, just print out the latex error instead
+            print(output[0].decode("utf-8"))
+            # # EYHC: This error message is rediculous. Replace it with the actual error message
+            # raise RuntimeError(
+            #     "Unfortunately, RenderCV's built-in TinyTeX binaries couldn't render"
+            #     " this LaTeX file into a PDF. This could be caused by one of two"
+            #     " reasons:\n\n1- The theme templates might have been updated in a way"
+            #     " RenderCV's TinyTeX cannot render. RenderCV's TinyTeX is minified to"
+            #     " keep the package size small. As a result, it doesn't function like a"
+            #     " general-purpose LaTeX distribution.\n2- Special characters, like"
+            #     " Greek or Chinese letters, that are not compatible with the fonts used"
+            #     " or RenderCV's TinyTeX might have been used.\n\nHowever, this issue"
+            #     " can be resolved quickly. RenderCV allows you to run your own LaTeX"
+            #     " distribution instead of the built-in TinyTeX. This can be done with"
+            #     " the '--use-local-latex-command' option, as shown below:\n\nrendercv"
+            #     " render --use-local-latex-command lualatex John_Doe_CV.yaml\n\nIf you"
+            #     " ensure that the generated LaTeX file can be compiled by your local"
+            #     " LaTeX distribution, RenderCV will work successfully. You can debug"
+            #     " the generated LaTeX file in your LaTeX editor to resolve any bugs."
+            #     " Then, you can start using RenderCV with your local LaTeX"
+            #     " distribution.\n\nIf you can't solve the problem, please open an issue"
+            #     " on GitHub."
+            # )
         else:
             try:
                 output = output[0].decode("utf-8")
