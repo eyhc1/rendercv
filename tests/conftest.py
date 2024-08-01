@@ -7,7 +7,7 @@ import os
 import pathlib
 import shutil
 import typing
-from typing import Optional
+from typing import Optional, Union
 
 import jinja2
 import pydantic
@@ -86,7 +86,7 @@ bullet_entry_dictionary = {
 
 
 @pytest.fixture
-def publication_entry() -> dict[str, str | list[str]]:
+def publication_entry() -> dict[str, Union[str, list[str]]]:
     """Return a sample publication entry."""
     return copy.deepcopy(publication_entry_dictionary)
 
